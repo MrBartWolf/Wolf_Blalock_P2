@@ -12,17 +12,12 @@ pid_t Fork(void) {
     return pid;
 }
 
-/*
- *******************************
- * Um, what's this function for?
- *******************************
- */
 void unix_error(char *msg) {
     printf(stderr, msg);
     /*
-     ************************************
-     * Um, should this be -1 for failure?
-     ************************************
+     ***************************************
+     * Um, shouldn't this be -1 for failure?
+     ***************************************
      */
     exit(1);
 }
@@ -38,9 +33,11 @@ int Shmget(key_t key, size_t size, int shmflag) {
     return r;
 }
 
-// Why is there a '*'?
 void *Shmat(int shmid, const void *shmaddr, int shmflg); {
- 
+    int r = shmat(shmid, shmaddr, shmflg);
+    if (r == -1)
+        unix_error("Error calling shmget()\n");
+    return r;
 }
 
 // Detaches the shared memory segment located at the address specified by shmaddr from the address
@@ -53,16 +50,19 @@ int Shmdt(const void *shmaddr) {
 }
 
 // For named semaphores
-// Why is there a '*'?
 sem_t *Sem_open(const char *name, int oflag, mode_t mode, unsigned int value) {
-    
+    int r = sem_open(name, oflag, mode, value);
+    if (r == -1)
+        unix_error("Error calling sem_open()\n");
+    return r;
 }
 
-// 2?
+/****
+ * 2?
+ ****/
 sem_t *Sem_open2(const char *name, int oflag) {
 
 }
-
 
 int Sem_close(sem_t *sem) {
     r = sem_close(sem);

@@ -1,4 +1,6 @@
 void main(int argc, char *argv[]) {
+    // Establish IPC semaphores and shared memory.
+
     // LinesActive = argv[1]
 
     // While (LinesActive > 0) {
@@ -9,7 +11,7 @@ void main(int argc, char *argv[]) {
 
             // Print("Factory Line %d produced %d parts in %d milliSecs", data...)
 
-            // update per-factory-line production aggregates (num-items-built, num-iterations
+            // update per-factory-line production aggregates (num-items-built, num-iterations)
 
         // else if (Termination message
 

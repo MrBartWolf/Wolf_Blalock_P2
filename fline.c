@@ -1,9 +1,12 @@
 void main(int argc, char *argv[]) {
-    // # iterations
+    int iterations
+    int partsMadeByMe
 
-    // # partsMadeByMe
+    // Connect to shared memory
 
-    // While (remain > 0) {
+    // Connect to semaphores.
+
+    // while (remain > 0) {
 
         // Determine how many to make and update remain
 
@@ -20,4 +23,6 @@ void main(int argc, char *argv[]) {
     // }
 
     // Create and send completion message
+
+    // Clean up IPC.
 }
