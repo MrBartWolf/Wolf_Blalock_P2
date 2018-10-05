@@ -5,6 +5,8 @@
  * rendevous our thoughts as we punch away at this thing. What do you think?
  *************************************************************************************************/
 
+#include <sstdlib>
+
 void main(int argc, char *argv[]) {
     int n;
     int order_size;
@@ -22,9 +24,8 @@ void main(int argc, char *argv[]) {
         printf("Format: ./parent n order_size\n");
         exit(-1);
     }
-    /**************************
-     * Perform arg parsing here 
-     **************************/
+    n = atoi(argv[1]);
+    order_size = atoi(argv[2]);
 
     // Set up shared memory and initialize its objects. *Partway complete*
         /**********************************************
@@ -32,7 +33,7 @@ void main(int argc, char *argv[]) {
          **********************************************/
         shmkey = ftok("../shmemsegment.h", 0);
         /**********************************************
-         * Consider defining this outside of this file.
+         * Consider defining flag outside of this file.
          **********************************************/
         shmflg = IPC_CREAT | S_IRUSR | S_IWUSR;
         shmid = Shmget(shmkey, SHMEM_SIZE, shmflg);
@@ -48,12 +49,10 @@ void main(int argc, char *argv[]) {
     printFinalReport_sem = Sem_open("/printFinalReport", O_CREAT, SEMFLG, 0);
     finalReportPrinted_sem = Sem_open("/finalReportPrinted", O_CREAT, SEMFLG, 0);
 
-    /*
-     *********************************************************************************************
+    /*********************************************************************************************
      * I'm thinking for efficiency's sake (and to impress the professor, we should have the shared
      * memory read/write semaphore be unnamed. What do you think?
-     *********************************************************************************************
-     */
+     *********************************************************************************************/
 
     // Fork/Execute supervisor process to run in a separate terminal *Complete I think but be sure*
     superID = Fork();
