@@ -2,5 +2,6 @@
 
 typedef struct {
     int partsMade, partsRemaining;
-    sem_t SHMaccess_sem;
-} shm
+} shmData;
+
+#define SHMEM_SIZE sizeof(shmData)
