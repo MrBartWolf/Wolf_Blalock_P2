@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "shmSegment.h"
+#include "ipc.h"
 #include "wrappers.h"
 
 void main(int argc, char *argv[]) {
+    // Local variables
     int myId;
     int capacity;
     int duration;
@@ -19,11 +20,20 @@ void main(int argc, char *argv[]) {
     sem_t *flinePrint_sem;
 
     // Handle command line arguments *Complete, I think*
+    if (argc != 4) {
+        printf("Format: ./fline myId, capacity, duration\n");
+        exit(-1);
+    }
     myId = atoi(argv[1]);
     capacity = atoi(argv[2]);
     capacity =atoi(argv[3]);
 
-    // Connect to shared memory
+    // Connect to shared memory *Incomplete*
+    /****************************************************************
+     * Shmkey? How do we get that if the parent process generated it?
+     ****************************************************************/
+    shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
+    shmP = Shmat(shmid, NULL, 0);
 
     // Connect to / open semaphores. *Complete*
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
@@ -72,7 +82,10 @@ void main(int argc, char *argv[]) {
 
     // Create and send completion message
 
-    // Clean up IPC. *Got to cleaning up semaphores only*
+    // Detach from shared memory *Complete I think*
+    Shmdt(shmP);
+
+    // Close semaphores *COMPLETE*
     Sem_close(shmAccess_sem);
     Sem_close(flinePrint_sem);
 }
