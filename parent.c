@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include "ipc.h"
 #include "wrappers.h"
+#include <sys/msg.h>
 
 void main(int argc, char *argv[]) {
     // Local variables
@@ -25,6 +26,10 @@ void main(int argc, char *argv[]) {
     key_t shmkey;
     int shmflg;
     shmData *shmP;
+    // Message Queue variables
+    key_t msgkey;
+    int msgid;
+    msgBuf *msgq;
     // Semaphore variables
     sem_t *shmAccess_sem;
     sem_t *flinePrint_sem;
@@ -49,6 +54,8 @@ void main(int argc, char *argv[]) {
         shmP -> partsRemaining = orderSize;
 
     // Set up the message queue
+    msgkey = ftok("../shmemsegment.h", 0);
+    msgid = msgget(msgkey, MSGFLG);
     
     // Set up semaphores *complete, I believe. Order could be better*
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
