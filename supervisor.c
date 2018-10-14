@@ -30,7 +30,7 @@ void main(int argc, char *argv[]) {
     linesActive = atoi(argv[1]);
 
     // Connect to message queue
-    msgkey = ftok("message queue", 0);
+    msgkey = ftok(MSGPATH, 0);
     msgid = Msgget(msgkey, MSGFLG);
 
     // Connect to shared memory

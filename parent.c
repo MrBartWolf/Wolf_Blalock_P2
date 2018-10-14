@@ -46,7 +46,7 @@ void main(int argc, char *argv[]) {
     orderSize = atoi(argv[2]);
 
     // Set up shared memory and initialize its objects. *Complete, I believe*
-    shmkey = ftok("../shmemsegment.h", 0);
+    shmkey = ftok(SHMPATH, 0);
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
 
@@ -54,7 +54,7 @@ void main(int argc, char *argv[]) {
     shmP -> partsRemaining = orderSize;
 
     // Set up the message queue
-    msgkey = ftok("message queue", 0); //I don't think the parent actually needs the mailbox
+    msgkey = ftok(MSGPATH, 0); //I don't think the parent actually needs the mailbox
     msgid = Msgget(msgkey, MSGFLG);
     
     // Set up semaphores *complete, I believe. Order could be better*
@@ -129,10 +129,10 @@ void main(int argc, char *argv[]) {
     Shmdt(shmP);
     shmctl(shmid, IPC_RMID, NULL);
 
-    // Destroy message queue
+    // Destroy message queue *COMPLETE*
+    Msgctl(msgid, IPC_RMID, NULL);
 
     // Clean up semaphores *COMPLETE*
-    
     Sem_close(shmAccess_sem);
     Sem_close(factoryLinesDone_sem);
     Sem_close(printFinalReport_sem);

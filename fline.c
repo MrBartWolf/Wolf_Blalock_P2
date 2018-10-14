@@ -37,18 +37,18 @@ void main(int argc, char *argv[]) {
     }
     myId = atoi(argv[1]);
     capacity = atoi(argv[2]);
-    capacity =atoi(argv[3]);
+    duration = atoi(argv[3]);
 
     // Connect to shared memory *Incomplete*
     /****************************************************************
      * Shmkey? How do we get that if the parent process generated it?
      ****************************************************************/
-    shmkey = ftok("../shmemsegment.h", 0); 
+    shmkey = ftok(SHMPATH, 0); 
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
 
     //Connect to Message queue
-    msgkey = ftok("message queue", 0);
+    msgkey = ftok(MSGPATH, 0);
     msgid = Msgget(msgkey, MSGFLG);
 
     // Connect to / open semaphores. *Complete*
@@ -103,7 +103,7 @@ void main(int argc, char *argv[]) {
     Sem_post(shmAccess_sem);
 
     // Create and send completion message *COMPLETE*
-    msg->msgType = 2; //This is a completion message
+    msg->msgType = 2; //This is a termination message
     msg->body.factory_id = myId;
     msg->body.capacity = capacity;
     msg->body.parts_made = partsMadeByMe;
