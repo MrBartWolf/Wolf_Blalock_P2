@@ -46,12 +46,12 @@ void main(int argc, char *argv[]) {
     orderSize = atoi(argv[2]);
 
     // Set up shared memory and initialize its objects. *Complete, I believe*
-        shmkey = ftok("../shmemsegment.h", 0);
-        shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
-        shmP = Shmat(shmid, NULL, 0);
+    shmkey = ftok("../shmemsegment.h", 0);
+    shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
+    shmP = Shmat(shmid, NULL, 0);
 
-        shmP -> partsMade = 0;
-        shmP -> partsRemaining = orderSize;
+    shmP -> partsMade = 0;
+    shmP -> partsRemaining = orderSize;
 
     // Set up the message queue
     msgkey = ftok("message queue", 0); //I don't think the parent actually needs the mailbox

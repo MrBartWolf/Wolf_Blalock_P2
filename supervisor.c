@@ -16,6 +16,11 @@ void main(int argc, char *argv[]) {
     key_t msgkey;
     int msgid;
     msgBuf *msg;
+    // Shared memory variables
+    int shmid;
+    key_t shmkey;
+    int shmflg;
+    shmData *shmP;
 
     // Handle command line argument *COMPLETE*
     if (argc != 2) {
@@ -27,6 +32,11 @@ void main(int argc, char *argv[]) {
     // Connect to message queue
     msgkey = ftok("message queue", 0);
     msgid = Msgget(msgkey, MSGFLG);
+
+    // Connect to shared memory
+    shmkey = ftok(SHMPATH, 0);
+    shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
+    shmP = Shmat(shmid, NULL, 0);
 
     // Connect to semaphores *COMPLETE* 
     factoryLinesDone_sem = Sem_open("/factoryLinesDone", O_CREAT, SEMFLG, 0);
@@ -77,8 +87,11 @@ void main(int argc, char *argv[]) {
     // Print per-factory-line production aggregates *COMPLETE*
     printf("****** SUPER: Final Report ******\n");
     for (int i = 0; i < linesActive; i++)
-        printf("Line %3d made total of %4d parts in %5d iterations\n", i, aggrs[i].itemsBuilt,
+        printf("Line   %3d made total of %4d parts in %5d iterations\n", i, aggrs[i].itemsBuilt,
             aggrs[i].iterations);
+    printf("==============================\n");
+
+    // Need to print the parts made vs order total
 
     // Inform parent that the final report has been printed *COMPLETE*
     Sem_post(finalReportPrinted_sem);

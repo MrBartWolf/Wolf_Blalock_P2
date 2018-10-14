@@ -24,3 +24,7 @@ typedef struct {
 #define MSG_INFO_SIZE (sizeof(msgBuf) - sizeof(long))
 
 #define MSGFLG (IPC_CREAT | S_IRUSR | S_IWUSR)
+
+#define MSGPATH "message queue"
+
+#define SHMPATH "shared memory"
