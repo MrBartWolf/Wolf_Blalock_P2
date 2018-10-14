@@ -25,4 +25,6 @@ int     Sem_init( sem_t *sem, int pshared, unsigned int value ) ;
 int     Sem_destroy( sem_t *sem ) ;
 
 int     Msgget( key_t key, int msgflg );
-
+int     Msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg);
+int     Msgrcv(int msqid, void *msgp, size_t maxmsgsz, long msgtyp, int msgflg);
+int     Msgctl(int msqid, int cmd, struct msqid_ds *buf);

@@ -116,3 +116,27 @@ int Msgget(key_t key, int msgflg) {
     return r;
 }
 
+int Msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg)
+{
+    r = msgsnd(msqid, msgp, msgsz, msgflg);
+    if (r == -1)
+        unix_error("Error calling msgsnd()\n");
+    return r;
+}
+
+int Msgrcv(int msqid, void *msgp, size_t maxmsgsz, long msgtyp, int msgflg)
+{
+    r = msgrcv(msqid, msgp, maxmsgsz, msgtyp, msgflg);
+    if (r == -1)
+        unix_error("Error calling msgrcv()\n");
+    return r;
+}
+
+int Msgctl(int msqid, int cmd, struct msqid_ds *buf)
+{
+    r = msgctl(msqid, cmd, buf);
+    if (r == -1)
+        unix_error("Error calling msgctl()\n");
+    return r;
+}
+

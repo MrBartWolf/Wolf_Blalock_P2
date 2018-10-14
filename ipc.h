@@ -10,7 +10,7 @@ typedef struct {
     struct {
         int factory_id;
         int capacity;
-        int partsMade;
+        int parts_made;
         int duration;
     } body;
 } msgBuf;

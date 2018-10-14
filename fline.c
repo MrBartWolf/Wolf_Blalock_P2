@@ -2,8 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <semaphore.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/stat.h>
 #include "ipc.h"
 #include "wrappers.h"
+#include <sys/msg.h>
 
 void main(int argc, char *argv[]) {
     // Local variables
@@ -14,10 +19,16 @@ void main(int argc, char *argv[]) {
     int partsThisIteration;
     int partsMadeByMe;
     // Shared memory variables
+    int shmid;
+    key_t shmkey;
     shmData *shmP;
     // Semaphore variables
     sem_t *shmAccess_sem;
     sem_t *flinePrint_sem;
+    // Message Queue variables
+    key_t msgkey;
+    int msgid;
+    msgBuf *msg;
 
     // Handle command line arguments *Complete, I think*
     if (argc != 4) {
@@ -32,8 +43,13 @@ void main(int argc, char *argv[]) {
     /****************************************************************
      * Shmkey? How do we get that if the parent process generated it?
      ****************************************************************/
+    shmkey = ftok("../shmemsegment.h", 0); 
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
+
+    //Connect to Message queue
+    msgkey = ftok("message queue", 0);
+    msgid = Msgget(msgkey, MSGFLG);
 
     // Connect to / open semaphores. *Complete*
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
@@ -66,7 +82,13 @@ void main(int argc, char *argv[]) {
         // sleep to simulate production time *COMPLETE*
         usleep(duration);
 
-        // Create and send production message
+        // Create and send production message *COMPLETE*
+        msg->msgType = 1; //This is a production message
+        msg->body.factory_id = myId;
+        msg->body.capacity = capacity;
+        msg->body.parts_made = partsThisIteration;
+        msg->body.duration = duration;
+        Msgsnd(msgid, &msg, MSG_INFO_SIZE, 0);
 
         // Increment # iterations *COMPLETE*
         iterations++;
@@ -80,7 +102,13 @@ void main(int argc, char *argv[]) {
     // Unlock shared memory semaphore, for it is no longer needed. *COMPLETE*
     Sem_post(shmAccess_sem);
 
-    // Create and send completion message
+    // Create and send completion message *COMPLETE*
+    msg->msgType = 2; //This is a completion message
+    msg->body.factory_id = myId;
+    msg->body.capacity = capacity;
+    msg->body.parts_made = partsMadeByMe;
+    msg->body.duration = duration;
+    Msgsnd(msgid, &msg, MSG_INFO_SIZE, 0);
 
     // Detach from shared memory *Complete I think*
     Shmdt(shmP);

@@ -1,7 +1,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "supervisor.h"
 #include "ipc.h"
+#include "wrappers.h"
 
 void main(int argc, char *argv[]) {
     // Local variables
@@ -10,6 +12,10 @@ void main(int argc, char *argv[]) {
     sem_t *factoryLinesDone_sem;
     sem_t *printFinalReport_sem;
     sem_t *finalReportPrinted_sem;
+    // Message Queue variables
+    key_t msgkey;
+    int msgid;
+    msgBuf *msg;
 
     // Handle command line argument *COMPLETE*
     if (argc != 2) {
@@ -19,8 +25,8 @@ void main(int argc, char *argv[]) {
     linesActive = atoi(argv[1]);
 
     // Connect to message queue
-
-    // Connect to shared memory?
+    msgkey = ftok("message queue", 0);
+    msgid = Msgget(msgkey, MSGFLG);
 
     // Connect to semaphores *COMPLETE* 
     factoryLinesDone_sem = Sem_open("/factoryLinesDone", O_CREAT, SEMFLG, 0);
@@ -34,22 +40,29 @@ void main(int argc, char *argv[]) {
         aggrs[i].iterations = 0;
     }
 
+    printf("SUPER: Starting\n");
     while (linesActive > 0) {
 
         // Receive a message from the message queue
+        Msgrcv(msgid, msg, MSG_INFO_SIZE, 0, MSGFLG); 
 
         // If (Production message)
-
+        if(msg->msgType == 1)
+        {
             // Print("Factory Line %d produced %d parts in %d milliSecs", data...)
-
+            printf("SUPER: Factory Line %d produced %d parts in %d milliSecs\n", msg->body.factory_id, msg->body.parts_made, msg->body.duration);
             // update per-factory-line production aggregates
-
+            aggrs[msg->body.factory_id].itemsBuilt += msg->body.parts_made;
+            aggrs[msg->body.factory_id].iterations++;
+        }
         // else if (Termination message)
-
+        else if(msg->msgType == 1)
+        {
             // LinesActive--
-
+            linesActive--;
             // Print("Factory Line %d Terminated", data...)
-
+            printf("SUPER: Factory Line %d Completed its task\n", msg->body.factory_id);
+        }
         // else
 
             // Discard unsupported message

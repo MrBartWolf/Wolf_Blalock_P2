@@ -29,7 +29,7 @@ void main(int argc, char *argv[]) {
     // Message Queue variables
     key_t msgkey;
     int msgid;
-    msgBuf *msgq;
+    msgBuf *msg;
     // Semaphore variables
     sem_t *shmAccess_sem;
     sem_t *flinePrint_sem;
@@ -54,8 +54,8 @@ void main(int argc, char *argv[]) {
         shmP -> partsRemaining = orderSize;
 
     // Set up the message queue
-    msgkey = ftok("../shmemsegment.h", 0);
-    msgid = msgget(msgkey, MSGFLG);
+    msgkey = ftok("message queue", 0); //I don't think the parent actually needs the mailbox
+    msgid = Msgget(msgkey, MSGFLG);
     
     // Set up semaphores *complete, I believe. Order could be better*
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
