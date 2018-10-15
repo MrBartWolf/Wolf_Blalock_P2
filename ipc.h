@@ -2,7 +2,7 @@
 #include <sys/msg.h>
 
 typedef struct {
-    int partsMade, partsRemaining;
+    int orderSize, partsMade, partsRemaining;
 } shmData;
 
 typedef struct {

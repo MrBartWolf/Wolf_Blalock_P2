@@ -102,6 +102,10 @@ void main(int argc, char *argv[]) {
     // Unlock shared memory semaphore, for it is no longer needed. *COMPLETE*
     Sem_post(shmAccess_sem);
 
+    Sem_wait(flinePrint_sem);
+    printf(">>> Factory Line %3d: Terminating after making total of %6d parts in %4d iterations\n", partsMadeByMe, iterations);
+    Sem_post(flinePrint_sem);
+
     // Create and send completion message *COMPLETE*
     msg->msgType = 2; //This is a termination message
     msg->body.factory_id = myId;

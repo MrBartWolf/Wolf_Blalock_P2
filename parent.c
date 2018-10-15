@@ -50,6 +50,7 @@ void main(int argc, char *argv[]) {
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
 
+    shmP -> orderSize = orderSize;
     shmP -> partsMade = 0;
     shmP -> partsRemaining = orderSize;
 
@@ -109,7 +110,7 @@ void main(int argc, char *argv[]) {
 
     // Wait for supervisor to collect aggregates from all factory lines *COMPLETE*
     Sem_wait(factoryLinesDone_sem);
-    printf("Supervisor says all lines have been completed");
+    printf("PARENT: Supervisor says all lines have been completed\n");
 
     // Give permission to supervisor to print final report *COMPLETE*
     Sem_post(printFinalReport_sem);
@@ -119,6 +120,7 @@ void main(int argc, char *argv[]) {
 
     // Clean up after zombie processes )(supervisor + all factory lines) *COMPLETE*
     waitpid(superID, NULL);
+    printf("PARENT: Shutting Down Factory Lines\n");
     for (int i = 0; i < numLines; i++) {
         waitpid(factoryID[i], NULL);
     }
