@@ -22,7 +22,7 @@ void unix_error(char *msg) {
      * Um, shouldn't this be -1 for failure?
      ***************************************
      */
-    exit(1);
+    exit(-1);
 }
 
 // Returns the identifier of the shared memory segment associated with the value of argument "key"
@@ -55,7 +55,7 @@ int Shmdt(const void *shmaddr) {
 // For named semaphores
 sem_t *Sem_open(const char *name, int oflag, mode_t mode, unsigned int value) {
     sem_t* r = sem_open(name, oflag, mode, value);
-    if (r == (void *)-1)
+    if (r == SEM_FAILED)
         unix_error("Error calling sem_open()\n");
     return r;
 }

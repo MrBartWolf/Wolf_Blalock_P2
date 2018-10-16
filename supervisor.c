@@ -87,7 +87,7 @@ void main(int argc, char *argv[]) {
     Sem_wait(printFinalReport_sem);
 
     // Print per-factory-line production aggregates
-    printf("****** SUPER: Final Report ******\n");
+    printf("\n****** SUPER: Final Report ******\n");
     for (int i = 0; i < linesActive; i++)
         printf("Line %3d made total of %4d parts in %5d iterations\n", i, aggrs[i].itemsBuilt,
             aggrs[i].iterations);
@@ -95,7 +95,7 @@ void main(int argc, char *argv[]) {
 
     // Need to print the parts made vs order total
     Sem_wait(shmAccess_sem);
-    printf("Grand total parts made = %4d   vs order size of %5d\n", shmP->partsMade, shmP->orderSize);
+    printf("Grand total parts made = %4d   vs order size of %4d\n", shmP->partsMade, shmP->orderSize);
     Sem_post(shmAccess_sem);
 
     printf("\n>>> Supervisor Terminated\n");

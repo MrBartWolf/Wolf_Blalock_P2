@@ -41,6 +41,7 @@ void main(int argc, char *argv[]) {
     }
     numLines = atoi(argv[1]);
     orderSize = atoi(argv[2]);
+    printf("PARENT: Will Manufacture an Order of Size = %d parts\n", orderSize);
 
     // Set up shared memory and initialize its objects.
     shmkey = ftok(SHMPATH, 0);
@@ -56,22 +57,13 @@ void main(int argc, char *argv[]) {
     msgid = Msgget(msgkey, MSGFLG);
     
     // Set up semaphores
-    int semVal;
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
-    sem_getvalue(shmAccess_sem, &semVal);
-    printf("%d\n", semVal);
     flinePrint_sem = Sem_open("/flinePrint", O_CREAT, SEMFLG, 1);
-    sem_getvalue(flinePrint_sem, &semVal);
-    printf("%d\n", semVal);
     factoryLinesDone_sem = Sem_open("/factoryLinesDone", O_CREAT, SEMFLG, 0);
-    sem_getvalue(factoryLinesDone_sem, &semVal);
-    printf("%d\n", semVal);
     printFinalReport_sem = Sem_open("/printFinalReport", O_CREAT, SEMFLG, 0);
-    sem_getvalue(printFinalReport_sem, &semVal);
-    printf("%d\n", semVal);
     finalReportPrinted_sem = Sem_open("/finalReportPrinted", O_CREAT, SEMFLG, 0);
-    sem_getvalue(finalReportPrinted_sem, &semVal);
-    printf("%d\n", semVal);
+
+    printf("Creating %d Factory Lines\n", numLines);
 
     // Fork/Execute supervisor process to run in a separate terminal
     int superID = Fork();
