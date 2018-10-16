@@ -1,14 +1,16 @@
 #include <fcntl.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/stat.h>
-#include "ipc.h"
-#include "wrappers.h"
 #include <sys/msg.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "msgq.h"
+#include "sem.h"
+#include "shm.h"
+#include "wrappers.h"
 
 void main(int argc, char *argv[]) {
     // Local variables
@@ -28,7 +30,7 @@ void main(int argc, char *argv[]) {
     // Message Queue variables
     key_t msgkey;
     int msgid;
-    msgBuf *msg;
+    msgBuf msg[MSG_SIZE];
 
     // Handle command line arguments *Complete, I think*
     if (argc != 4) {
@@ -39,10 +41,11 @@ void main(int argc, char *argv[]) {
     capacity = atoi(argv[2]);
     duration = atoi(argv[3]);
 
-    // Connect to shared memory *Incomplete*
-    /****************************************************************
-     * Shmkey? How do we get that if the parent process generated it?
-     ****************************************************************/
+    // Connect to / open semaphores.
+    shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
+    flinePrint_sem = Sem_open("/flinePrint", O_CREAT, SEMFLG, 1);
+
+    // Connect to shared memory
     shmkey = ftok(SHMPATH, 0); 
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
@@ -51,62 +54,55 @@ void main(int argc, char *argv[]) {
     msgkey = ftok(MSGPATH, 0);
     msgid = Msgget(msgkey, MSGFLG);
 
-    // Connect to / open semaphores. *Complete*
-    shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
-    flinePrint_sem = Sem_open("/flinePrint", O_CREAT, SEMFLG, 1);
-
     // Check number of remaining parts and adjust
     Sem_wait(shmAccess_sem);
+    printf("Parts remaining: %d\n", shmP -> partsRemaining);
     while (shmP -> partsRemaining > 0) {
-        // Determine how many to make and update remain *COMPLETE*
+        // Determine how many to make and update remain
         if (shmP -> partsRemaining >= capacity)
             partsThisIteration = capacity;
         else
             partsThisIteration = shmP -> partsRemaining;
-        /****************************************************************************************
-         * Are we supposed to update partsMade here or is the supervisor supposed to do that? Or
-         * does there even need to be a partsMade variable at all? I think he mentioned something
-         * about it but I am not sure the presence of one is necessary for the execution of this
-         * program.
-         ****************************************************************************************/
         // shmP -> partsMade += partsThisIteration;
         shmP -> partsRemaining -= partsThisIteration;
         Sem_post(shmAccess_sem);
 
-        // Print factory line production message *COMPLETE*
+        // Print factory line production message
         Sem_wait(flinePrint_sem);
-        printf("Factory Line %d: Going to make %d parts in %d milliSecs", myId, partsThisIteration,
+        printf("Factory Line %d: Going to make %d parts in %d milliSecs\n", myId, partsThisIteration,
             duration);
         Sem_post(flinePrint_sem);
 
-        // sleep to simulate production time *COMPLETE*
+        // sleep to simulate production time
         usleep(duration);
 
-        // Create and send production message *COMPLETE*
+        // Create and send production message
         msg->msgType = 1; //This is a production message
         msg->body.factory_id = myId;
         msg->body.capacity = capacity;
         msg->body.parts_made = partsThisIteration;
         msg->body.duration = duration;
-        Msgsnd(msgid, &msg, MSG_INFO_SIZE, 0);
+        Msgsnd(msgid, &msg, MSG_SIZE, 0);
+        printf("%ld %d %d %d %d\n", msg->msgType, msg->body.factory_id, msg->body.capacity, msg->body.parts_made, msg->body.duration);
 
-        // Increment # iterations *COMPLETE*
+        // Increment # iterations
         iterations++;
 
-        // Update total # parts made by me *COMPLETE*
+        // Update total # parts made by me
         partsMadeByMe += partsThisIteration;
 
-        // Lock the semaphore to read shared memory for the conditional. *COMPLETE*
+        // Lock the semaphore to read shared memory for the conditional.
         Sem_wait(shmAccess_sem);
     }
-    // Unlock shared memory semaphore, for it is no longer needed. *COMPLETE*
+    // Unlock shared memory semaphore, for it is no longer needed.
     Sem_post(shmAccess_sem);
 
     Sem_wait(flinePrint_sem);
-    printf(">>> Factory Line %3d: Terminating after making total of %6d parts in %4d iterations\n", partsMadeByMe, iterations);
+    printf(">>> Factory Line %3d: Terminating after making total of %6d parts in %4d iterations\n",
+        myId, partsMadeByMe, iterations);
     Sem_post(flinePrint_sem);
 
-    // Create and send completion message *COMPLETE*
+    // Create and send completion message
     msg->msgType = 2; //This is a termination message
     msg->body.factory_id = myId;
     msg->body.capacity = capacity;
@@ -114,10 +110,10 @@ void main(int argc, char *argv[]) {
     msg->body.duration = duration;
     Msgsnd(msgid, &msg, MSG_INFO_SIZE, 0);
 
-    // Detach from shared memory *Complete I think*
+    // Detach from shared memory
     Shmdt(shmP);
 
-    // Close semaphores *COMPLETE*
+    // Close semaphores
     Sem_close(shmAccess_sem);
     Sem_close(flinePrint_sem);
 }
