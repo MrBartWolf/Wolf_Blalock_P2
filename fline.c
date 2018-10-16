@@ -30,7 +30,7 @@ void main(int argc, char *argv[]) {
     // Message Queue variables
     key_t msgkey;
     int msgid;
-    msgBuf msg[MSG_SIZE];
+    msgBuf msg;
 
     // Handle command line arguments *Complete, I think*
     if (argc != 4) {
@@ -77,13 +77,12 @@ void main(int argc, char *argv[]) {
         usleep(duration);
 
         // Create and send production message
-        msg->msgType = 1; //This is a production message
-        msg->body.factory_id = myId;
-        msg->body.capacity = capacity;
-        msg->body.parts_made = partsThisIteration;
-        msg->body.duration = duration;
+        msg.msgType = 1; //This is a production message
+        msg.body.factory_id = myId;
+        msg.body.capacity = capacity;
+        msg.body.parts_made = partsThisIteration;
+        msg.body.duration = duration;
         Msgsnd(msgid, &msg, MSG_SIZE, 0);
-        printf("%ld %d %d %d %d\n", msg->msgType, msg->body.factory_id, msg->body.capacity, msg->body.parts_made, msg->body.duration);
 
         // Increment # iterations
         iterations++;
@@ -103,11 +102,11 @@ void main(int argc, char *argv[]) {
     Sem_post(flinePrint_sem);
 
     // Create and send completion message
-    msg->msgType = 2; //This is a termination message
-    msg->body.factory_id = myId;
-    msg->body.capacity = capacity;
-    msg->body.parts_made = partsMadeByMe;
-    msg->body.duration = duration;
+    msg.msgType = 2; //This is a termination message
+    msg.body.factory_id = myId;
+    msg.body.capacity = capacity;
+    msg.body.parts_made = partsMadeByMe;
+    msg.body.duration = duration;
     Msgsnd(msgid, &msg, MSG_INFO_SIZE, 0);
 
     // Detach from shared memory

@@ -18,7 +18,7 @@ void main(int argc, char *argv[]) {
     // Message Queue variables
     key_t msgkey;
     int msgid;
-    msgBuf msg[MSG_SIZE];
+    msgBuf msg;
     // Shared memory variables
     int shmid;
     key_t shmkey;
@@ -41,7 +41,7 @@ void main(int argc, char *argv[]) {
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
 
-    // Connect to semaphores *COMPLETE* 
+    // Connect to semaphores
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
     factoryLinesDone_sem = Sem_open("/factoryLinesDone", O_CREAT, SEMFLG, 0);
     printFinalReport_sem = Sem_open("/printFinalReport", O_CREAT, SEMFLG, 0);
@@ -58,38 +58,35 @@ void main(int argc, char *argv[]) {
     while (linesActive > 0) {
 
         // Receive a message from the message queue
-        printf("Reveiving message from message queue\n");
-        Msgrcv(msgid, msg, MSG_SIZE, 0, MSGFLG); 
+        Msgrcv(msgid, &msg, MSG_SIZE, 0, MSGFLG); 
 
-        printf("%ld\n", msg->msgType);
-
-        if(msg->msgType == 1)
+        if(msg.msgType == 1)
         {
             // Print("Factory Line %d produced %d parts in %d milliSecs", data...)
             printf("SUPER: Factory Line %d produced %d parts in %d milliSecs\n",
-                msg->body.factory_id, msg->body.parts_made, msg->body.duration);
+                msg.body.factory_id, msg.body.parts_made, msg.body.duration);
             // update per-factory-line production aggregates
-            aggrs[msg->body.factory_id].itemsBuilt += msg->body.parts_made;
-            aggrs[msg->body.factory_id].iterations++;
+            aggrs[msg.body.factory_id].itemsBuilt += msg.body.parts_made;
+            aggrs[msg.body.factory_id].iterations++;
         }
-        else if(msg->msgType == 2)
+        else if(msg.msgType == 2)
         {
             // LinesActive--
             linesActive--;
             // Print("Factory Line %d Terminated", data...)
-            printf("SUPER: Factory Line %d Completed its task\n", msg->body.factory_id);
+            printf("SUPER: Factory Line %d Completed its task\n", msg.body.factory_id);
         }
         else
             printf("SUPER: Message was of an unsupported type. Something went wrong\n");
     }
 
-    // Inform parent that all factory lines have completed *COMPLETE*
+    // Inform parent that all factory lines have completed
     Sem_post(factoryLinesDone_sem);
 
-    // Wait for permission from parent to start printing production aggregates *COMPLETE*
+    // Wait for permission from parent to start printing production aggregates
     Sem_wait(printFinalReport_sem);
 
-    // Print per-factory-line production aggregates *COMPLETE*
+    // Print per-factory-line production aggregates
     printf("****** SUPER: Final Report ******\n");
     for (int i = 0; i < linesActive; i++)
         printf("Line %3d made total of %4d parts in %5d iterations\n", i, aggrs[i].itemsBuilt,
@@ -110,5 +107,4 @@ void main(int argc, char *argv[]) {
     Sem_close(factoryLinesDone_sem);
     Sem_close(printFinalReport_sem);
     Sem_close(finalReportPrinted_sem);
-
 }
