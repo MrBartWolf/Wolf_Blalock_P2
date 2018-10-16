@@ -1,13 +1,9 @@
-/************************************************
- * Wrappers for system call functions
- ************************************************/
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <semaphore.h>
 #include <sys/types.h>
 #include <sys/msg.h>
-
 
 pid_t   Fork(void);
 void    unix_error(char *msg) ;

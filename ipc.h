@@ -25,6 +25,6 @@ typedef struct {
 
 #define MSGFLG (IPC_CREAT | S_IRUSR | S_IWUSR)
 
-#define MSGPATH "message queue"
+#define MSGPATH "message_queue"
 
-#define SHMPATH "shared memory"
+#define SHMPATH "shared_memory"

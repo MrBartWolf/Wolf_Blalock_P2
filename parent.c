@@ -1,21 +1,18 @@
-/*************************************************************************************************
- * I like to write comments to myself by encasing them in asterisks like this, not just comments
- * but also concerns, bugs that need to be fixed, and tasks that need to be completed. I think they
- * will make for a good way to rendevous our thoughts as we punch away at this thing. What do you
- * think?
- *************************************************************************************************/
-
 #include <fcntl.h>
 #include <semaphore.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/msg.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
-#include "ipc.h"
+
+#include "msgq.h"
+#include "sem.h"
+#include "shm.h"
 #include "wrappers.h"
-#include <sys/msg.h>
 
 void main(int argc, char *argv[]) {
     // Local variables
@@ -37,7 +34,7 @@ void main(int argc, char *argv[]) {
     sem_t *printFinalReport_sem;
     sem_t *finalReportPrinted_sem;
 
-    // Error check and parse command line arguments *COMPLETE*
+    // Error check and parse command line arguments
     if (argc != 3) {
         printf("Format: ./parent num_lines order_size\n");
         exit(-1);
@@ -45,7 +42,7 @@ void main(int argc, char *argv[]) {
     numLines = atoi(argv[1]);
     orderSize = atoi(argv[2]);
 
-    // Set up shared memory and initialize its objects. *Complete, I believe*
+    // Set up shared memory and initialize its objects.
     shmkey = ftok(SHMPATH, 0);
     shmid = Shmget(shmkey, SHMEM_SIZE, SHMFLG);
     shmP = Shmat(shmid, NULL, 0);
@@ -58,26 +55,38 @@ void main(int argc, char *argv[]) {
     msgkey = ftok(MSGPATH, 0); //I don't think the parent actually needs the mailbox
     msgid = Msgget(msgkey, MSGFLG);
     
-    // Set up semaphores *complete, I believe. Order could be better*
+    // Set up semaphores
+    int semVal;
     shmAccess_sem = Sem_open("/shmAccess", O_CREAT, SEMFLG, 1);
+    sem_getvalue(shmAccess_sem, &semVal);
+    printf("%d\n", semVal);
     flinePrint_sem = Sem_open("/flinePrint", O_CREAT, SEMFLG, 1);
+    sem_getvalue(flinePrint_sem, &semVal);
+    printf("%d\n", semVal);
     factoryLinesDone_sem = Sem_open("/factoryLinesDone", O_CREAT, SEMFLG, 0);
+    sem_getvalue(factoryLinesDone_sem, &semVal);
+    printf("%d\n", semVal);
     printFinalReport_sem = Sem_open("/printFinalReport", O_CREAT, SEMFLG, 0);
+    sem_getvalue(printFinalReport_sem, &semVal);
+    printf("%d\n", semVal);
     finalReportPrinted_sem = Sem_open("/finalReportPrinted", O_CREAT, SEMFLG, 0);
+    sem_getvalue(finalReportPrinted_sem, &semVal);
+    printf("%d\n", semVal);
 
-    // Fork/Execute supervisor process to run in a separate terminal *Complete I think but be sure*
+    // Fork/Execute supervisor process to run in a separate terminal
     int superID = Fork();
     if (superID == 0) {
-        char *cmnd;
-        snprintf(cmnd, STRSIZE, "./supervisor %d ; exec bash", numLines);
+        char *cmnd = malloc(1024);
+        sprintf(cmnd, "./supervisor %d ; exec bash", numLines);
         if (execlp("/usr/bin/gnome-terminal", "SuperVterm", "--", "/bin/bash", "-c", cmnd,
                 NULL) < 0) {
             perror("PARENT: execlp Supervisor Failed");
             exit(-1);
         }
+        free(cmnd);
     } 
 
-    // Create/execute all factory line processes in same terminal as parent *Needs work*
+    // Create/execute all factory line processes in same terminal as parent
     srandom(time(NULL));
     long capacity;
     long duration;
@@ -89,40 +98,39 @@ void main(int argc, char *argv[]) {
         duration = (random() % 701) + 500;
         factoryID[i] = Fork();
         if (factoryID[i] == 0) {
-            char *idArg;
-            char *capArg;
-            char *durArg;
-            snprintf(idArg, STRSIZE, "%d", i + 1);
-            snprintf(capArg, STRSIZE, "%d", capacity);
-            snprintf(durArg, STRSIZE, "%d", duration); 
-            if (execl("./fline", "fline", idArg, capArg, durArg, NULL) < 0) {
+            char *idArg = malloc(1024);
+            char *capacityArg = malloc(1024);
+            char *durationArg = malloc(1024);
+            sprintf(idArg, "%d", i + 1);
+            sprintf(capacityArg, "%ld", capacity);
+            sprintf(durationArg, "%ld", duration);
+            if (execl("./fline", "fline", idArg, capacityArg, durationArg, NULL) < 0) {
                 perror("Parent: execl Factory line failed");
                 exit(-1);
             }
+            free(idArg);
+            free(capacityArg);
+            free(durationArg);
         }
-        /************************************************************************************
-         * Formatting of flags might need to be updated to be more like the example images. I
-         * don't know, do you think it's a big deal?
-         ************************************************************************************/
-        printf("PARENT: Factory Line %d Created with Capacity %ld Duration %ld\n", i, capacity,
+        printf("PARENT: Factory Line %4d Created with Capacity %4ld Duration %4ld\n", i, capacity,
                 duration);
     }
 
-    // Wait for supervisor to collect aggregates from all factory lines *COMPLETE*
+    // Wait for supervisor to collect aggregates from all factory lines
     Sem_wait(factoryLinesDone_sem);
     printf("PARENT: Supervisor says all lines have been completed\n");
 
-    // Give permission to supervisor to print final report *COMPLETE*
+    // Give permission to supervisor to print final report
     Sem_post(printFinalReport_sem);
 
-    // Wait for supervisor to finish printing *COMPLETE*
+    // Wait for supervisor to finish printing
     Sem_wait(finalReportPrinted_sem);
 
-    // Clean up after zombie processes )(supervisor + all factory lines) *COMPLETE*
-    waitpid(superID, NULL);
+    // Clean up after zombie processes )(supervisor + all factory lines)
+    waitpid(superID, NULL, 0);
     printf("PARENT: Shutting Down Factory Lines\n");
     for (int i = 0; i < numLines; i++) {
-        waitpid(factoryID[i], NULL);
+        waitpid(factoryID[i], NULL, 0);
     }
 
     // Destroy any objects in shared memory
@@ -131,10 +139,10 @@ void main(int argc, char *argv[]) {
     Shmdt(shmP);
     shmctl(shmid, IPC_RMID, NULL);
 
-    // Destroy message queue *COMPLETE*
+    // Destroy message queue
     Msgctl(msgid, IPC_RMID, NULL);
 
-    // Clean up semaphores *COMPLETE*
+    // Clean up semaphores
     Sem_close(shmAccess_sem);
     Sem_close(factoryLinesDone_sem);
     Sem_close(printFinalReport_sem);
@@ -146,6 +154,4 @@ void main(int argc, char *argv[]) {
     Sem_unlink("/printFinalReport");
     Sem_unlink("/finalReportPrinted");
     Sem_unlink("/flinePrint");
-
-    // Anything else?
 }

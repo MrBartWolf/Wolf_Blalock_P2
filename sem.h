@@ -1,0 +1,1 @@
+#define SEMFLG (IPC_CREAT | S_IRUSR | S_IWUSR)

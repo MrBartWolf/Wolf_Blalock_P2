@@ -1,8 +1,10 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "msgq.h"
+#include "sem.h"
+#include "shm.h"
 #include "supervisor.h"
-#include "ipc.h"
 #include "wrappers.h"
 
 void main(int argc, char *argv[]) {
@@ -16,7 +18,7 @@ void main(int argc, char *argv[]) {
     // Message Queue variables
     key_t msgkey;
     int msgid;
-    msgBuf *msg;
+    msgBuf *msg = malloc(MSG_SIZE);
     // Shared memory variables
     int shmid;
     key_t shmkey;
@@ -56,28 +58,29 @@ void main(int argc, char *argv[]) {
     while (linesActive > 0) {
 
         // Receive a message from the message queue
-        Msgrcv(msgid, msg, MSG_INFO_SIZE, 0, MSGFLG); 
+        printf("Reveiving message from message queue\n");
+        Msgrcv(msgid, msg, MSG_SIZE, 0, MSGFLG); 
 
-        // If (Production message)
+        printf("%ld\n", msg->msgType);
+
         if(msg->msgType == 1)
         {
             // Print("Factory Line %d produced %d parts in %d milliSecs", data...)
-            printf("SUPER: Factory Line %d produced %d parts in %d milliSecs\n", msg->body.factory_id, msg->body.parts_made, msg->body.duration);
+            printf("SUPER: Factory Line %d produced %d parts in %d milliSecs\n",
+                msg->body.factory_id, msg->body.parts_made, msg->body.duration);
             // update per-factory-line production aggregates
             aggrs[msg->body.factory_id].itemsBuilt += msg->body.parts_made;
             aggrs[msg->body.factory_id].iterations++;
         }
-        // else if (Termination message)
-        else if(msg->msgType == 1)
+        else if(msg->msgType == 2)
         {
             // LinesActive--
             linesActive--;
             // Print("Factory Line %d Terminated", data...)
             printf("SUPER: Factory Line %d Completed its task\n", msg->body.factory_id);
         }
-        // else ??
-
-            // Discard unsupported message ??
+        else
+            printf("SUPER: Message was of an unsupported type. Something went wrong\n");
     }
 
     // Inform parent that all factory lines have completed *COMPLETE*
@@ -107,4 +110,6 @@ void main(int argc, char *argv[]) {
     Sem_close(factoryLinesDone_sem);
     Sem_close(printFinalReport_sem);
     Sem_close(finalReportPrinted_sem);
+
+    free(msg);
 }
